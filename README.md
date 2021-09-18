@@ -1,5 +1,5 @@
 # Required
 
-- (Folder) tools
-   - (File) exiftool(-k).exe
+- (Folder) `tools`
+   - (File) `exiftool(-k).exe`
     Download from: https://exiftool.org/ 
