@@ -74,7 +74,6 @@ foreach ($file in $files){
   [string]$newFileName = ""
   [string]$fileExtention = $file.Extension
 
-  $file.fullname
   $sCreateDate = $sCreateDate.replace("Create Date                     : ","")
   [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:ss', $null)
 
@@ -101,11 +100,13 @@ foreach ($file in $files){
     "copy" { Copy-Item -Path $file.fullname -Destination $newFileName }
     "move" { Move-Item -Path $file.fullname -Destination $newFileName }
   }
+  Write-host "We are $copyOrMove`ing file: $file to: $newFileName" -NoNewline
 
   if ($offsetHour -or $offsetMinute -or $offsetSeconds) {
     $sNewCreateDate = $dtCreateDate.ToString("yyyy:MM:dd HH:mm:ss")
     & $exiftoolPath "-DateTimeOriginal=$sNewCreateDate" -overwrite_original_in_place $newFileName
+    Write-host " and updating the DateTaken field." -NoNewline
   }
-
+  Write-host ""
   $firstOne = $false
 }
