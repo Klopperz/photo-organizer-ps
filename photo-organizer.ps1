@@ -73,15 +73,19 @@ foreach ($file in $files){
   [int]$duplicationNumber = 0
   [string]$newFileName = ""
   [string]$fileExtention = $file.Extension
-
-  $sCreateDate = $sCreateDate.replace("Create Date                     : ","")
-  [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:ss', $null)
-
+  if ($sCreateDate) {
+    $sCreateDate = $sCreateDate.replace("Create Date                     : ","")
+    [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:ss', $null)
+  } else {
+    $sCreateDate = & $exiftoolPath -FileCreateDate $file.fullname
+    $sCreateDate = $sCreateDate.replace("File Creation Date/Time         : ","")
+    [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:sszzz', $null)
+  }
   if (($offsetHour -or $offsetMinute -or $offsetSeconds) -and $firstOne) {
     Write-host "You have selected a offset. This is what we are doing:"
     Write-host " - Original time: $dtCreateDate"
   } elseif ($firstOne) {
-    Write-host "You have not selected a offset. This is the time we are using: $dtCreateDate"
+    Write-host "You have not selected a offset. This is the time we are using: $dtCreateDate. For file: $($file.name)"
   }
   if ($offsetHour){    $dtCreateDate = $dtCreateDate.AddHours($offsetHour) }
   if ($offsetMinute){  $dtCreateDate = $dtCreateDate.AddMinutes($offsetMinute) }
