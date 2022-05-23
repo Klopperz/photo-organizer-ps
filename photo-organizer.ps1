@@ -59,7 +59,11 @@ param (
     return $true
   })]
   [System.IO.FileInfo]
-  $exiftoolPath = ".\tools\exiftool.exe"
+  $exiftoolPath = ".\tools\exiftool.exe",
+
+  [Parameter(Mandatory=$false)]
+  [switch]
+  $whatsAppImages
 )
 $files = Get-ChildItem -path $sourcePath -File -Recurse:$recursive
 
@@ -73,25 +77,41 @@ foreach ($file in $files){
   [int]$duplicationNumber = 0
   [string]$newFileName = ""
   [string]$fileExtention = $file.Extension
-  if ($sCreateDate) {
-    $sCreateDate = $sCreateDate.replace("Create Date                     : ","")
-    [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:ss', $null)
+  if ($whatsAppImages) {
+    $fileName = $file.BaseName
+    $date = $fileName.Split(" ")[2]
+    $time = $fileName.Split(" ")[4]
+    $dtCreateDate = [datetime]::parseexact("$date $time", 'yyyy-MM-dd HH.mm.ss', $null)
+    if ($firstOne) {
+      Write-host "You have selected whatapp images. This is the time we are using: $dtCreateDate. For file: $($file.name)"
+    }
   } else {
-    $sCreateDate = & $exiftoolPath -FileCreateDate $file.fullname
-    $sCreateDate = $sCreateDate.replace("File Creation Date/Time         : ","")
-    [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:sszzz', $null)
-  }
-  if (($offsetHour -or $offsetMinute -or $offsetSeconds) -and $firstOne) {
-    Write-host "You have selected a offset. This is what we are doing:"
-    Write-host " - Original time: $dtCreateDate"
-  } elseif ($firstOne) {
-    Write-host "You have not selected a offset. This is the time we are using: $dtCreateDate. For file: $($file.name)"
-  }
-  if ($offsetHour){    $dtCreateDate = $dtCreateDate.AddHours($offsetHour) }
-  if ($offsetMinute){  $dtCreateDate = $dtCreateDate.AddMinutes($offsetMinute) }
-  if ($offsetSeconds){ $dtCreateDate = $dtCreateDate.AddSeconds($offsetSeconds) }
-  if (( $offsetHour -or $offsetMinute -or $offsetSeconds ) -and $firstOne) {
-    Write-host " - (New) using time: $dtCreateDate"
+    if ($sCreateDate) {
+      $sCreateDate = $sCreateDate.replace("Create Date                     : ","")
+      if (-not($sCreateDate.StartsWith("0000"))){
+        [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:ss', $null)
+      } else {
+        $sCreateDate = & $exiftoolPath -FileCreateDate $file.fullname
+        $sCreateDate = $sCreateDate.replace("File Creation Date/Time         : ","")
+        [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:sszzz', $null)
+      }
+    } else {
+      $sCreateDate = & $exiftoolPath -FileCreateDate $file.fullname
+      $sCreateDate = $sCreateDate.replace("File Creation Date/Time         : ","")
+      [datetime]$dtCreateDate = [datetime]::parseexact($sCreateDate, 'yyyy:MM:dd HH:mm:sszzz', $null)
+    }
+    if (($offsetHour -or $offsetMinute -or $offsetSeconds) -and $firstOne) {
+      Write-host "You have selected a offset. This is what we are doing:"
+      Write-host " - Original time: $dtCreateDate"
+    } elseif ($firstOne) {
+      Write-host "You have not selected a offset. This is the time we are using: $dtCreateDate. For file: $($file.name)"
+    }
+    if ($offsetHour){    $dtCreateDate = $dtCreateDate.AddHours($offsetHour) }
+    if ($offsetMinute){  $dtCreateDate = $dtCreateDate.AddMinutes($offsetMinute) }
+    if ($offsetSeconds){ $dtCreateDate = $dtCreateDate.AddSeconds($offsetSeconds) }
+    if (( $offsetHour -or $offsetMinute -or $offsetSeconds ) -and $firstOne) {
+      Write-host " - (New) using time: $dtCreateDate"
+    }
   }
   if ($haltOnFirstone -and $firstOne) {
     Pause
@@ -108,7 +128,7 @@ foreach ($file in $files){
   }
   Write-host "We are $copyOrMove`ing file: $file to: $newFileName" -NoNewline
 
-  if ($offsetHour -or $offsetMinute -or $offsetSeconds) {
+  if ($offsetHour -or $offsetMinute -or $offsetSeconds -or $whatsAppImages) {
     $sNewCreateDate = $dtCreateDate.ToString("yyyy:MM:dd HH:mm:ss")
     & $exiftoolPath "-DateTimeOriginal=$sNewCreateDate" -overwrite_original_in_place $newFileName
     Write-host " and updating the DateTaken field." -NoNewline
