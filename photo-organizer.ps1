@@ -51,6 +51,12 @@ param (
   [switch]
   $haltOnFirstone,
 
+  [Parameter(
+    Mandatory=$false,
+    HelpMessage="A timezone is defined like: +02:00 or: -10:00")]
+  [string]
+  $newTimezone,
+
   [Parameter(Mandatory=$false)]
   [ValidateScript({
     if( -Not ($_ | Test-Path) ){
@@ -130,7 +136,11 @@ foreach ($file in $files){
 
   if ($offsetHour -or $offsetMinute -or $offsetSeconds -or $whatsAppImages) {
     $sNewCreateDate = $dtCreateDate.ToString("yyyy:MM:dd HH:mm:ss")
-    & $exiftoolPath "-DateTimeOriginal=$sNewCreateDate" -overwrite_original_in_place $newFileName
+    if ($newTimezone){
+      & $exiftoolPath "-DateTimeOriginal=$sNewCreateDate" "-OffsetTime=$newTimezone" -overwrite_original_in_place $newFileName
+    } else {
+      & $exiftoolPath "-DateTimeOriginal=$sNewCreateDate" -overwrite_original_in_place $newFileName
+    }
     Write-host " and updating the DateTaken field." -NoNewline
   }
   Write-host ""
